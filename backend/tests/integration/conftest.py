@@ -13,7 +13,8 @@ async def _clean_database() -> None:
         await conn.execute(
             text(
                 "TRUNCATE TABLE resumes, candidate_profiles, experiences, projects, "
-                "skills, education, certifications RESTART IDENTITY CASCADE"
+                "skills, education, certifications, candidate_evidence, "
+                "job_descriptions, job_requirements RESTART IDENTITY CASCADE"
             )
         )
     await engine.dispose()

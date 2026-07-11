@@ -7,6 +7,7 @@ from app.models.candidate import (
     Skill,
 )
 from app.models.evidence import CandidateEvidence
+from app.models.job import JobDescription, JobRequirement
 from app.models.resume import Resume
 
 __all__ = [
@@ -15,6 +16,8 @@ __all__ = [
     "Certification",
     "Education",
     "Experience",
+    "JobDescription",
+    "JobRequirement",
     "Project",
     "Resume",
     "Skill",

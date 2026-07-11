@@ -6,13 +6,13 @@ Last Updated: 2026-07-11
 
 # Current Phase
 
-Phase 3 — Job Description Intelligence
+Phase 4 — Embeddings and Retrieval
 
 ---
 
 # Current Milestone
 
-M3.1 — Job Submission
+M4.1 — pgvector Setup
 
 ---
 
@@ -159,26 +159,75 @@ field empty (observed live — a bullet under one experience wasn't extracted by
 local model that run, and no evidence was invented to compensate), confirming the
 generator defers faithfully to whatever was actually captured upstream.
 
+## Phase 3 — Job Description Intelligence (Complete)
+
+### M3.1 — Job Submission
+
+- `POST /api/v1/jobs` accepts `{"text": "..."}`; blank/missing text rejected with
+  `422 VALIDATION_ERROR` via a new global `RequestValidationError` handler
+  (`app/main.py`) that normalizes FastAPI's default validation errors into the same
+  `{"error": {"code", "message"}}` envelope used elsewhere.
+- `JobDescription`/`JobRequirement` SQLAlchemy models (`app/models/job.py`); source
+  text preserved verbatim. Migration
+  `2badee0172d6_create_job_description_and_job_.py`.
+
+### M3.2 — Requirement Extraction
+
+- Versioned prompt (`app/prompts/jd_extraction.md`, `v1`) and `JobRequirementExtraction`
+  schema (`app/schemas/job.py`); `app/services/jd_analyzer.py` mirrors the resume
+  extraction pattern (LLMClient + bounded retries + schema validation).
+
+### M3.3 — Requirement Classification
+
+- Each `JobRequirementItem` carries `category` (`skill`, `experience`,
+  `responsibility`, `education`, `certification`, `domain_knowledge`) and `importance`
+  (`required`, `preferred`, `optional`), assigned by the LLM per explicit prompt rules
+  distinguishing "must have"/"Requirements" language from "nice to have"/"Preferred"
+  language, and persisted as-is (no separate deterministic reclassification pass).
+
+### Phase 3 Exit Criteria — Verified
+
+A real job description produces validated, persisted structured requirements.
+Confirmed via 29 automated tests (`make test`), Ruff/mypy clean, and a live end-to-end
+run (real Ollama + real Postgres) against a realistic ML engineer job posting: role
+title, company, and seniority were extracted correctly, and all 7 requirements were
+classified into the correct category and required-vs-preferred importance matching the
+source text's "Requirements"/"Preferred" sections exactly, with no fabricated
+requirements. **Observation**: the two "Responsibilities" bullets in that same posting
+were not extracted as `responsibility`-category requirements by the small local model
+used — a prompt/extraction-quality nuance to revisit during Phase 9 evaluation, not a
+functional defect (schema validation, categorization, and persistence all behaved
+correctly for what was extracted).
+
+**Bug found and fixed during this phase**: `AsyncSession.refresh()` without
+`attribute_names` expires relationships as well as columns; the first access of a
+relationship (e.g. `JobDescription.requirements`) during Pydantic
+`from_attributes` serialization after such a refresh raised `MissingGreenlet` (an
+async-unsafe lazy load). Fixed in both `job_persistence.py` and
+`profile_persistence.py` by scoping the refresh to `attribute_names=["created_at"]`
+(the only server-generated column actually needed).
+
 ---
 
 # In Progress
 
-- None. Phases 0–2 are complete. Phase 3 (Job Description Intelligence) has not yet
+- None. Phases 0–3 are complete. Phase 4 (Embeddings and Retrieval) has not yet
   started.
 
 ---
 
 # Not Started
 
-## Phase 3 — Job Description Intelligence
+## Phase 4 — Embeddings and Retrieval
 
-- M3.1 — Job Submission
-- M3.2 — Requirement Extraction
-- M3.3 — Requirement Classification
+- M4.1 — pgvector Setup
+- M4.2 — Embedding Service
+- M4.3 — Evidence Indexing
+- M4.4 — Semantic Retrieval
+- M4.5 — Retrieval Evaluation
 
 ## Later Phases
 
-- Phase 4 — Embeddings and Retrieval
 - Phase 5 — Matching and Scoring
 - Phase 6 — Grounded Resume Tailoring
 - Phase 7 — Resume Versioning and Export
@@ -193,12 +242,12 @@ generator defers faithfully to whatever was actually captured upstream.
 The repository still contains empty placeholder files for later phases, created ahead
 of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
 
-- `backend/app/api/{jobs,analysis,generation}.py`
-- `backend/app/models/{job,application}.py` (Phase 3 / Phase 7+)
-- `backend/app/schemas/{job,matching,generation}.py`
-- `backend/app/services/{jd_analyzer,matching_service,scoring_service,retrieval_service,
+- `backend/app/api/{analysis,generation}.py`
+- `backend/app/models/application.py` (Phase 7+)
+- `backend/app/schemas/{matching,generation}.py`
+- `backend/app/services/{matching_service,scoring_service,retrieval_service,
   embedding_service,tailoring_service}.py`
-- `backend/app/prompts/{jd_extraction,evidence_matching,bullet_rewriting}.md`
+- `backend/app/prompts/{evidence_matching,bullet_rewriting}.md`
 - `backend/tests/evaluation/`
 - `frontend/src/**`
 
@@ -219,5 +268,5 @@ None currently.
 
 # Next Action
 
-Begin Phase 3 — Job Description Intelligence, starting with M3.1 (Job Submission):
-an endpoint to submit and persist job description text with input validation.
+Begin Phase 4 — Embeddings and Retrieval, starting with M4.1 (pgvector Setup): enable
+the pgvector extension and add embedding storage for candidate evidence.

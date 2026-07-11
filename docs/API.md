@@ -210,4 +210,43 @@ Response `200`:
 
 `404 NOT_FOUND` if `candidate_profile_id` does not exist.
 
+---
+
+## `POST /api/v1/jobs`
+
+Submits job description text, extracts structured requirements via the configured LLM
+provider, and persists both.
+
+Request:
+
+```json
+{"text": "Senior Backend Engineer at Example Corp. Requirements: 5+ years of Python..."}
+```
+
+`text` must be non-blank (`422 VALIDATION_ERROR` otherwise).
+
+Response `201`:
+
+```json
+{
+  "id": "uuid",
+  "source_text": "...",
+  "role_title": "Senior Backend Engineer",
+  "company": "Example Corp",
+  "seniority": "senior",
+  "requirements": [
+    {
+      "id": "uuid",
+      "text": "5+ years of Python experience",
+      "category": "skill | experience | responsibility | education | certification | domain_knowledge",
+      "importance": "required | preferred | optional"
+    }
+  ],
+  "created_at": "2026-01-01T00:00:00"
+}
+```
+
+Uses the same `LLM_OUTPUT_INVALID` (422) / `LLM_PROVIDER_ERROR` (502) controlled errors
+as resume extraction (see above) if the LLM provider fails.
+
 This section must be updated as further endpoints are implemented.

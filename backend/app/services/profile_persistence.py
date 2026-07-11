@@ -50,5 +50,8 @@ async def persist_resume_and_profile(
     db.add(candidate_profile)
     db.add(resume)
     await db.commit()
-    await db.refresh(candidate_profile)
+    # Scope the refresh to the server-generated column only: a bare refresh() also
+    # expires relationships, which would force an async-unsafe lazy load the next
+    # time a relationship (e.g. `experiences`, `evidence`) is accessed.
+    await db.refresh(candidate_profile, attribute_names=["created_at"])
     return candidate_profile
