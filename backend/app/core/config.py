@@ -18,6 +18,11 @@ class Settings(BaseSettings):
 
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
 
+    max_upload_size_mb: int = 10
+    upload_storage_dir: str = "data/uploads"
+
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/resume_assistant"
+
 
 @lru_cache
 def get_settings() -> Settings:

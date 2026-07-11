@@ -221,3 +221,29 @@ Incremental development improves:
 - testability,
 - debugging,
 - project control.
+
+---
+
+# ADR-011 — psycopg3 as the SQLAlchemy Database Driver
+
+## Status
+
+Accepted
+
+## Decision
+
+Use `psycopg` (psycopg3) with SQLAlchemy 2.0's `postgresql+psycopg` dialect for all
+database access, using `create_async_engine`/`AsyncSession` in the application and a
+plain synchronous engine in Alembic migrations.
+
+## Rationale
+
+psycopg3's SQLAlchemy dialect supports both synchronous and asynchronous execution
+under the same driver and URL scheme, avoiding the need for two separate drivers
+(e.g. psycopg2 for sync Alembic migrations and asyncpg for the async application).
+
+## Consequences
+
+Local development uses a Dockerized PostgreSQL container (`docker-compose.yml`)
+mapped to host port `5433` rather than the default `5432`, to avoid colliding with
+any pre-existing local PostgreSQL installation. `DATABASE_URL` reflects this.

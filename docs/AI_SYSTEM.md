@@ -448,6 +448,16 @@ No service should assume a hardcoded model name.
 
 Hosted providers may be added later behind the same abstraction.
 
+## Implementation Note: Ollama "Thinking" Models
+
+Some Ollama models (for example the Qwen3 family) emit a separate internal reasoning
+stream and place it in a `thinking` response field instead of `response`, even when a
+structured `format` schema is requested. The Ollama provider implementation
+(`app/llm/ollama.py`) sends `"think": false` to request non-thinking output, and
+falls back to reading the `thinking` field defensively if `response` is empty. This
+keeps the quirk isolated to the Ollama-specific implementation, consistent with
+ADR-005 (provider-agnostic LLM layer).
+
 ---
 
 # Temperature Guidance
