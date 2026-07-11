@@ -52,6 +52,7 @@ class CandidateProfileExtraction(BaseModel):
 
 class ResumeUploadResponse(BaseModel):
     id: UUID
+    candidate_profile_id: UUID
     filename: str
     content_type: str
     size_bytes: int

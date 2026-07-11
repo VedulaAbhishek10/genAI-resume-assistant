@@ -33,3 +33,6 @@ async def get_db(
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as session:
         yield session
+
+
+DbDep = Annotated[AsyncSession, Depends(get_db)]

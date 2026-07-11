@@ -12,6 +12,7 @@ from app.models.candidate import (
 )
 from app.models.resume import Resume
 from app.schemas.resume import CandidateProfileExtraction
+from app.services.evidence_service import generate_evidence
 
 
 async def persist_resume_and_profile(
@@ -23,13 +24,20 @@ async def persist_resume_and_profile(
     profile: CandidateProfileExtraction,
 ) -> CandidateProfile:
     candidate_profile = CandidateProfile(
+        id=uuid.uuid4(),
         professional_summary=profile.professional_summary,
-        experiences=[Experience(**item.model_dump()) for item in profile.experiences],
-        projects=[Project(**item.model_dump()) for item in profile.projects],
-        skills=[Skill(**item.model_dump()) for item in profile.skills],
-        education=[Education(**item.model_dump()) for item in profile.education],
-        certifications=[Certification(**item.model_dump()) for item in profile.certifications],
+        experiences=[
+            Experience(id=uuid.uuid4(), **item.model_dump()) for item in profile.experiences
+        ],
+        projects=[Project(id=uuid.uuid4(), **item.model_dump()) for item in profile.projects],
+        skills=[Skill(id=uuid.uuid4(), **item.model_dump()) for item in profile.skills],
+        education=[Education(id=uuid.uuid4(), **item.model_dump()) for item in profile.education],
+        certifications=[
+            Certification(id=uuid.uuid4(), **item.model_dump())
+            for item in profile.certifications
+        ],
     )
+    candidate_profile.evidence = generate_evidence(candidate_profile)
 
     resume = Resume(
         id=resume_id,

@@ -6,9 +6,11 @@ from app.models.candidate import (
     Project,
     Skill,
 )
+from app.models.evidence import CandidateEvidence
 from app.models.resume import Resume
 
 __all__ = [
+    "CandidateEvidence",
     "CandidateProfile",
     "Certification",
     "Education",

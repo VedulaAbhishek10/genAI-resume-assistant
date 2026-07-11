@@ -145,6 +145,7 @@ Response `201`:
 ```json
 {
   "id": "uuid",
+  "candidate_profile_id": "uuid",
   "filename": "resume.pdf",
   "content_type": "application/pdf",
   "size_bytes": 12345,
@@ -181,5 +182,32 @@ Controlled error responses use the shape `{"error": {"code": "...", "message": "
 | 422    | `EXTRACTION_FAILED`      | Text could not be extracted from the document|
 | 422    | `LLM_OUTPUT_INVALID`     | LLM structured output failed schema validation after retries |
 | 502    | `LLM_PROVIDER_ERROR`     | The configured LLM provider was unreachable or errored |
+
+---
+
+## `GET /api/v1/candidate-profiles/{candidate_profile_id}/evidence`
+
+Lists atomic, traceable `CandidateEvidence` units generated deterministically (no LLM
+call) from a persisted candidate profile's experiences, projects, skills, education, and
+certifications.
+
+Response `200`:
+
+```json
+[
+  {
+    "id": "uuid",
+    "candidate_profile_id": "uuid",
+    "evidence_type": "experience_bullet | project_bullet | achievement | skill | certification | education_item",
+    "source_entity_type": "experience | project | skill | education | certification",
+    "source_entity_id": "uuid",
+    "text": "...",
+    "evidence_metadata": {"...": "..."},
+    "created_at": "2026-01-01T00:00:00"
+  }
+]
+```
+
+`404 NOT_FOUND` if `candidate_profile_id` does not exist.
 
 This section must be updated as further endpoints are implemented.

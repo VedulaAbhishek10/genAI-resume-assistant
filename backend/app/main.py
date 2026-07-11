@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.evidence import router as evidence_router
 from app.api.resumes import router as resumes_router
 from app.core.config import get_settings
 from app.core.exceptions import AppError
@@ -11,6 +12,7 @@ configure_logging(settings)
 
 app = FastAPI(title=settings.app_name)
 app.include_router(resumes_router, prefix="/api/v1")
+app.include_router(evidence_router, prefix="/api/v1")
 
 
 @app.exception_handler(AppError)

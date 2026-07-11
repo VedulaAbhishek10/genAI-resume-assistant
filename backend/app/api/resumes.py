@@ -2,10 +2,9 @@ from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, UploadFile
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
-from app.db.session import get_db
+from app.db.session import DbDep
 from app.llm.base import LLMClient
 from app.llm.provider import get_llm_client
 from app.schemas.resume import ResumeUploadResponse
@@ -22,7 +21,6 @@ _CONTENT_TYPE_FOR_EXTENSION = {
 }
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
-DbDep = Annotated[AsyncSession, Depends(get_db)]
 
 
 def _llm_client_dependency(settings: SettingsDep) -> LLMClient:
@@ -51,7 +49,7 @@ async def upload_resume(
     candidate_profile = await extract_candidate_profile(extracted_text, llm_client)
 
     filename = file.filename or f"resume{extension}"
-    await persist_resume_and_profile(
+    persisted_profile = await persist_resume_and_profile(
         db,
         resume_id=resume_id,
         filename=filename,
@@ -62,6 +60,7 @@ async def upload_resume(
 
     return ResumeUploadResponse(
         id=resume_id,
+        candidate_profile_id=persisted_profile.id,
         filename=filename,
         content_type=_CONTENT_TYPE_FOR_EXTENSION[extension],
         size_bytes=len(content),

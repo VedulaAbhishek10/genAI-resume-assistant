@@ -6,13 +6,13 @@ Last Updated: 2026-07-11
 
 # Current Phase
 
-Phase 2 — Candidate Evidence Model
+Phase 3 — Job Description Intelligence
 
 ---
 
 # Current Milestone
 
-M2.1 — Evidence Schema
+M3.1 — Job Submission
 
 ---
 
@@ -125,23 +125,59 @@ persisted structured candidate profile. Confirmed via:
 
 ---
 
+## Phase 2 — Candidate Evidence Model (Complete)
+
+### M2.1 — Evidence Schema
+
+- `CandidateEvidence` SQLAlchemy model (`app/models/evidence.py`) + Pydantic read schema
+  (`app/schemas/evidence.py`) with `EvidenceType` (`experience_bullet`, `project_bullet`,
+  `achievement`, `skill`, `certification`, `education_item`) and `SourceEntityType` enums.
+  Provenance via `source_entity_type`/`source_entity_id`; free-form `evidence_metadata`
+  (Postgres `JSONB`). Migration `0f9ff0d35f97_create_candidate_evidence_table.py`.
+
+### M2.2 — Evidence Generation
+
+- `app/services/evidence_service.py::generate_evidence` — pure, deterministic function
+  (no LLM, no DB access; unit tested directly on plain ORM objects per NFR-003) producing
+  one evidence unit per atomic claim: experience/project description + each achievement,
+  one per skill, one per education entry (+ its achievements), one per certification.
+  Wired into `profile_persistence.py` so evidence is generated and committed atomically
+  alongside the candidate profile on upload.
+
+### M2.3 — Evidence API
+
+- `GET /api/v1/candidate-profiles/{candidate_profile_id}/evidence` lists evidence
+  ordered by creation; `404 NOT_FOUND` for an unknown profile.
+
+### Phase 2 Exit Criteria — Verified
+
+Candidate claims are represented as traceable, inspectable evidence units. Confirmed via
+25 automated tests (`make test`), Ruff/mypy clean, and a live end-to-end run (real Ollama
++ real Postgres) inspecting the evidence API response directly. Note: evidence generation
+correctly produces **no** fabricated evidence when the upstream LLM extraction leaves a
+field empty (observed live — a bullet under one experience wasn't extracted by the small
+local model that run, and no evidence was invented to compensate), confirming the
+generator defers faithfully to whatever was actually captured upstream.
+
+---
+
 # In Progress
 
-- None. Phase 1 is complete. Phase 2 (Candidate Evidence Model) has not yet started.
+- None. Phases 0–2 are complete. Phase 3 (Job Description Intelligence) has not yet
+  started.
 
 ---
 
 # Not Started
 
-## Phase 2 — Candidate Evidence Model
+## Phase 3 — Job Description Intelligence
 
-- M2.1 — Evidence Schema
-- M2.2 — Evidence Generation
-- M2.3 — Evidence API
+- M3.1 — Job Submission
+- M3.2 — Requirement Extraction
+- M3.3 — Requirement Classification
 
 ## Later Phases
 
-- Phase 3 — Job Description Intelligence
 - Phase 4 — Embeddings and Retrieval
 - Phase 5 — Matching and Scoring
 - Phase 6 — Grounded Resume Tailoring
@@ -158,8 +194,7 @@ The repository still contains empty placeholder files for later phases, created 
 of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
 
 - `backend/app/api/{jobs,analysis,generation}.py`
-- `backend/app/llm/provider.py` — implemented; `app/models/{job,application}.py` — not
-  yet implemented (Phase 3 / Phase 7+)
+- `backend/app/models/{job,application}.py` (Phase 3 / Phase 7+)
 - `backend/app/schemas/{job,matching,generation}.py`
 - `backend/app/services/{jd_analyzer,matching_service,scoring_service,retrieval_service,
   embedding_service,tailoring_service}.py`
@@ -184,6 +219,5 @@ None currently.
 
 # Next Action
 
-Begin Phase 2 — Candidate Evidence Model, starting with M2.1 (Evidence Schema):
-define evidence types, source references, and provenance for candidate evidence
-units, per `docs/DATA_MODEL.md`'s `CandidateEvidence` entity.
+Begin Phase 3 — Job Description Intelligence, starting with M3.1 (Job Submission):
+an endpoint to submit and persist job description text with input validation.

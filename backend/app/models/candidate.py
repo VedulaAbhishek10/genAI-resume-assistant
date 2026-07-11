@@ -12,6 +12,7 @@ from sqlalchemy.sql import func
 from app.db.session import Base
 
 if TYPE_CHECKING:
+    from app.models.evidence import CandidateEvidence
     from app.models.resume import Resume
 
 
@@ -38,6 +39,9 @@ class CandidateProfile(Base):
         back_populates="candidate_profile", cascade="all, delete-orphan"
     )
     resumes: Mapped[list[Resume]] = relationship(back_populates="candidate_profile")
+    evidence: Mapped[list[CandidateEvidence]] = relationship(
+        back_populates="candidate_profile", cascade="all, delete-orphan"
+    )
 
 
 class Experience(Base):

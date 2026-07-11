@@ -42,3 +42,8 @@ class LLMProviderError(AppError):
 class LLMValidationError(AppError):
     status_code = 422
     error_code = "LLM_OUTPUT_INVALID"
+
+
+class NotFoundError(AppError):
+    status_code = 404
+    error_code = "NOT_FOUND"
