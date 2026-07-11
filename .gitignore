@@ -1,0 +1,41 @@
+CLAUDE.md
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Private candidate/application data
+data/samples/*
+data/evaluation/*
+!data/samples/.gitkeep
+!data/evaluation/.gitkeep
+
+# Logs
+*.log
