@@ -276,4 +276,67 @@ Response `200`:
 Results are ordered by descending `similarity` (`1 - cosine_distance`). `404 NOT_FOUND`
 if `candidate_profile_id` does not exist; `422` if `query` is blank/missing.
 
+---
+
+## `POST /api/v1/match-analyses`
+
+Runs a full match analysis for a candidate profile against a job description: for
+each of the job's requirements, retrieves relevant candidate evidence, classifies the
+match via the LLM (`STRONG_MATCH`/`PARTIAL_MATCH`/`NO_EVIDENCE`), then computes the
+final score **deterministically** from those classifications (the LLM never sets the
+overall score directly — see ADR-007).
+
+Request:
+
+```json
+{"candidate_profile_id": "uuid", "job_description_id": "uuid"}
+```
+
+Response `201`:
+
+```json
+{
+  "id": "uuid",
+  "candidate_profile_id": "uuid",
+  "job_description_id": "uuid",
+  "overall_score": 0.46,
+  "component_scores": {
+    "required_skills": 1.0,
+    "experience_alignment": 0.25,
+    "semantic_evidence_quality": 0.99
+  },
+  "requirement_matches": [
+    {
+      "id": "uuid",
+      "job_requirement_id": "uuid",
+      "requirement_text": "Experience with Python",
+      "category": "experience",
+      "importance": "required",
+      "classification": "STRONG_MATCH",
+      "explanation": "...",
+      "confidence": 1.0,
+      "evidence": [{ "...": "... (CandidateEvidenceRead)" }]
+    }
+  ],
+  "gaps": [
+    {
+      "requirement_text": "Experience with Kubernetes",
+      "category": "experience",
+      "importance": "required",
+      "classification": "NO_EVIDENCE"
+    }
+  ],
+  "created_at": "2026-01-01T00:00:00"
+}
+```
+
+`component_scores` only includes components with at least one requirement in that
+bucket (see `docs/ROADMAP.md` M5.3); remaining weights are renormalized so an
+analysis is never penalized for a job posting that, say, has no certification
+requirements. `gaps` includes every `NO_EVIDENCE` requirement plus any `required`
+requirement that only scored `PARTIAL_MATCH`.
+
+`404 NOT_FOUND` if either ID does not exist. Uses the same `LLM_OUTPUT_INVALID` (422)
+/ `LLM_PROVIDER_ERROR` (502) controlled errors as other LLM-backed endpoints.
+
 This section must be updated as further endpoints are implemented.

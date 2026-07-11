@@ -26,6 +26,26 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/resume_assistant"
 
+    # Deterministic match-scoring weights (see docs/ROADMAP.md M5.3); must sum to 1.0
+    # across whichever components are actually present for a given analysis.
+    weight_required_skills: float = 0.30
+    weight_experience_alignment: float = 0.25
+    weight_responsibility_alignment: float = 0.20
+    weight_preferred_skills: float = 0.10
+    weight_education_certifications: float = 0.05
+    weight_semantic_evidence_quality: float = 0.10
+
+    @property
+    def scoring_weights(self) -> dict[str, float]:
+        return {
+            "required_skills": self.weight_required_skills,
+            "experience_alignment": self.weight_experience_alignment,
+            "responsibility_alignment": self.weight_responsibility_alignment,
+            "preferred_skills": self.weight_preferred_skills,
+            "education_certifications": self.weight_education_certifications,
+            "semantic_evidence_quality": self.weight_semantic_evidence_quality,
+        }
+
 
 @lru_cache
 def get_settings() -> Settings:

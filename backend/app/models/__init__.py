@@ -8,6 +8,7 @@ from app.models.candidate import (
 )
 from app.models.evidence import CandidateEvidence
 from app.models.job import JobDescription, JobRequirement
+from app.models.matching import MatchAnalysis, RequirementMatch
 from app.models.resume import Resume
 
 __all__ = [
@@ -18,7 +19,9 @@ __all__ = [
     "Experience",
     "JobDescription",
     "JobRequirement",
+    "MatchAnalysis",
     "Project",
+    "RequirementMatch",
     "Resume",
     "Skill",
 ]

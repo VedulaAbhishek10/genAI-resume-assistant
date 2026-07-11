@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.analysis import router as analysis_router
 from app.api.evidence import router as evidence_router
 from app.api.jobs import router as jobs_router
 from app.api.resumes import router as resumes_router
@@ -16,6 +17,7 @@ app = FastAPI(title=settings.app_name)
 app.include_router(resumes_router, prefix="/api/v1")
 app.include_router(evidence_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(analysis_router, prefix="/api/v1")
 
 
 @app.exception_handler(AppError)

@@ -6,13 +6,13 @@ Last Updated: 2026-07-11
 
 # Current Phase
 
-Phase 5 — Matching and Scoring
+Phase 6 — Grounded Resume Tailoring
 
 ---
 
 # Current Milestone
 
-M5.1 — Match Classification
+M6.1 — Suggestion Schema
 
 ---
 
@@ -272,24 +272,82 @@ real pgvector retrieval) — verified both via direct SQL (`vector_dims(embeddin
 
 ---
 
+## Phase 5 — Matching and Scoring (Complete)
+
+### M5.1 — Match Classification
+
+- Versioned prompt (`app/prompts/evidence_matching.md`, `v1`) and
+  `RequirementMatchExtraction` schema (`app/schemas/matching.py`) with
+  `STRONG_MATCH`/`PARTIAL_MATCH`/`NO_EVIDENCE`.
+- `app/services/matching_service.py::classify_requirement_match`: the LLM references
+  evidence by 1-based position in a numbered list shown in the prompt, **not** by
+  UUID (LLMs cannot reliably reproduce exact UUIDs) — the app resolves indices back
+  to real evidence rows deterministically, silently ignoring any out-of-range index.
+- `MatchAnalysis`/`RequirementMatch` SQLAlchemy models
+  (`app/models/matching.py`), migration
+  `d14b85b9f7c1_create_match_analysis_and_requirement_.py`. Each match run creates a
+  new `MatchAnalysis` (rather than overwriting a prior one), so re-running analysis
+  over time is naturally auditable.
+
+### M5.2 — Match Explanation
+
+- Each `RequirementMatch` carries `explanation`, `confidence`, and the resolved
+  supporting `CandidateEvidenceRead` objects (not just IDs), surfaced through
+  `POST /api/v1/match-analyses`.
+
+### M5.3 — Deterministic Scoring
+
+- `app/services/scoring_service.py::calculate_match_score` — pure, deterministic
+  (LLMs classify; this computes the actual score, per ADR-007). Maps each
+  classification to a fixed score (`STRONG_MATCH`=1.0, `PARTIAL_MATCH`=0.5,
+  `NO_EVIDENCE`=0.0), averages within each of 5 category/importance buckets plus a
+  6th `semantic_evidence_quality` bucket (average LLM confidence across all
+  matches), then combines via configurable weights (`Settings.scoring_weights`,
+  defaults matching `docs/ROADMAP.md` M5.3 exactly). Buckets with no requirements
+  are excluded and remaining weights renormalized.
+- Verified by hand against a live run: `experience_alignment=0.25`,
+  `semantic_evidence_quality=0.9875` → `overall_score = (0.25·0.25 +
+  0.10·0.9875)/(0.25+0.10) = 0.46071428571...`, matching the API's output exactly.
+
+### M5.4 — Gap Analysis
+
+- `app/services/scoring_service.py::identify_gaps`: every `NO_EVIDENCE` requirement
+  is a gap regardless of importance; a `PARTIAL_MATCH` is only a gap when the
+  requirement is `required` (a partial match on a merely preferred/optional item is
+  not a pressing gap).
+
+### Phase 5 Exit Criteria — Verified
+
+The system produces an explainable score and requirement-level evidence mapping.
+Confirmed via 49 automated tests (`make test`), Ruff/mypy clean, and a live
+end-to-end run (real Ollama + real Postgres, `POST /api/v1/resumes` →
+`POST /api/v1/jobs` → `POST /api/v1/match-analyses`) taking ~85s for 4 requirements.
+**Observation**: the local model's classification was occasionally questionable in
+isolation (e.g. reasoning that a "PostgreSQL" skill listing doesn't count as evidence
+for a "PostgreSQL experience" requirement) — a model-quality issue for Phase 9
+evaluation to track, not a pipeline defect; the deterministic scoring/gap logic
+correctly reflects whatever classification it's given either way.
+
+---
+
 # In Progress
 
-- None. Phases 0–4 are complete. Phase 5 (Matching and Scoring) has not yet started.
+- None. Phases 0–5 are complete. Phase 6 (Grounded Resume Tailoring) has not yet
+  started.
 
 ---
 
 # Not Started
 
-## Phase 5 — Matching and Scoring
+## Phase 6 — Grounded Resume Tailoring
 
-- M5.1 — Match Classification
-- M5.2 — Match Explanation
-- M5.3 — Deterministic Scoring
-- M5.4 — Gap Analysis
+- M6.1 — Suggestion Schema
+- M6.2 — Bullet Rewriting
+- M6.3 — Grounding Validation
+- M6.4 — Human Review Workflow
 
 ## Later Phases
 
-- Phase 6 — Grounded Resume Tailoring
 - Phase 7 — Resume Versioning and Export
 - Phase 8 — Frontend Product Experience
 - Phase 9 — Evaluation and Observability
@@ -302,11 +360,11 @@ real pgvector retrieval) — verified both via direct SQL (`vector_dims(embeddin
 The repository still contains empty placeholder files for later phases, created ahead
 of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
 
-- `backend/app/api/{analysis,generation}.py`
+- `backend/app/api/generation.py`
 - `backend/app/models/application.py` (Phase 7+)
-- `backend/app/schemas/{matching,generation}.py`
-- `backend/app/services/{matching_service,scoring_service,tailoring_service}.py`
-- `backend/app/prompts/{evidence_matching,bullet_rewriting}.md`
+- `backend/app/schemas/generation.py`
+- `backend/app/services/tailoring_service.py`
+- `backend/app/prompts/bullet_rewriting.md`
 - `frontend/src/**`
 
 These remain intentionally unimplemented (empty) and are out of scope until their
@@ -326,6 +384,6 @@ None currently.
 
 # Next Action
 
-Begin Phase 5 — Matching and Scoring, starting with M5.1 (Match Classification):
-classify each job requirement against retrieved candidate evidence as
-`STRONG_MATCH`/`PARTIAL_MATCH`/`NO_EVIDENCE`.
+Begin Phase 6 — Grounded Resume Tailoring, starting with M6.1 (Suggestion Schema):
+represent original text, suggested text, reason, evidence, confidence, and review
+status for AI-generated resume suggestions.
