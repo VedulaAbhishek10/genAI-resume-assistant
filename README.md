@@ -51,10 +51,18 @@ curl http://127.0.0.1:8000/health
 ```
 
 Upload a resume (PDF or DOCX) and receive extracted text plus a structured, evidence-grounded
-candidate profile:
+candidate profile (this also computes embeddings for each evidence unit; the first call
+downloads the embedding model from Hugging Face and may take longer):
 
 ```bash
 curl -F "file=@/path/to/resume.pdf;type=application/pdf" http://127.0.0.1:8000/api/v1/resumes
+```
+
+Retrieve the evidence semantically closest to a job requirement:
+
+```bash
+curl -G "http://127.0.0.1:8000/api/v1/candidate-profiles/<candidate_profile_id>/retrieve" \
+  --data-urlencode "query=Experience with backend web frameworks"
 ```
 
 ## Testing

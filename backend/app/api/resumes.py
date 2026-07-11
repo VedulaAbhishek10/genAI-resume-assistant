@@ -56,6 +56,7 @@ async def upload_resume(
         document_type=extension.lstrip("."),
         extracted_text=extracted_text,
         profile=candidate_profile,
+        settings=settings,
     )
 
     return ResumeUploadResponse(

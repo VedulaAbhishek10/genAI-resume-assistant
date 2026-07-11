@@ -33,3 +33,8 @@ class CandidateEvidenceRead(BaseModel):
     text: str
     evidence_metadata: dict[str, str | None]
     created_at: datetime
+
+
+class RetrievedEvidence(BaseModel):
+    evidence: CandidateEvidenceRead
+    similarity: float

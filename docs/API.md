@@ -249,4 +249,31 @@ Response `201`:
 Uses the same `LLM_OUTPUT_INVALID` (422) / `LLM_PROVIDER_ERROR` (502) controlled errors
 as resume extraction (see above) if the LLM provider fails.
 
+---
+
+## `GET /api/v1/candidate-profiles/{candidate_profile_id}/retrieve`
+
+Retrieves the top-K candidate evidence units semantically closest to a free-text query
+(typically a job requirement's `text`), ranked by cosine similarity over embeddings
+computed with the configured embedding model (`EMBEDDING_MODEL`).
+
+Query parameters:
+
+- `query` (required, non-blank): the text to find relevant evidence for.
+- `top_k` (optional, 1–50): overrides the configured `RETRIEVAL_TOP_K` default.
+
+Response `200`:
+
+```json
+[
+  {
+    "evidence": { "...": "... (same shape as GET .../evidence items)" },
+    "similarity": 0.83
+  }
+]
+```
+
+Results are ordered by descending `similarity` (`1 - cosine_distance`). `404 NOT_FOUND`
+if `candidate_profile_id` does not exist; `422` if `query` is blank/missing.
+
 This section must be updated as further endpoints are implemented.

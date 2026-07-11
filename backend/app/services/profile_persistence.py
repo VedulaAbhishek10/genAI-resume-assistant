@@ -2,6 +2,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings
 from app.models.candidate import (
     CandidateProfile,
     Certification,
@@ -12,6 +13,7 @@ from app.models.candidate import (
 )
 from app.models.resume import Resume
 from app.schemas.resume import CandidateProfileExtraction
+from app.services.embedding_service import embed_texts_async
 from app.services.evidence_service import generate_evidence
 
 
@@ -22,6 +24,7 @@ async def persist_resume_and_profile(
     document_type: str,
     extracted_text: str,
     profile: CandidateProfileExtraction,
+    settings: Settings,
 ) -> CandidateProfile:
     candidate_profile = CandidateProfile(
         id=uuid.uuid4(),
@@ -37,7 +40,12 @@ async def persist_resume_and_profile(
             for item in profile.certifications
         ],
     )
-    candidate_profile.evidence = generate_evidence(candidate_profile)
+    evidence = generate_evidence(candidate_profile)
+    if evidence:
+        embeddings = await embed_texts_async([item.text for item in evidence], settings)
+        for item, embedding in zip(evidence, embeddings, strict=True):
+            item.embedding = embedding
+    candidate_profile.evidence = evidence
 
     resume = Resume(
         id=resume_id,

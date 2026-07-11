@@ -47,3 +47,8 @@ class LLMValidationError(AppError):
 class NotFoundError(AppError):
     status_code = 404
     error_code = "NOT_FOUND"
+
+
+class EmbeddingError(AppError):
+    status_code = 500
+    error_code = "EMBEDDING_ERROR"

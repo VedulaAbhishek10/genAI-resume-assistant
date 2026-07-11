@@ -6,13 +6,13 @@ Last Updated: 2026-07-11
 
 # Current Phase
 
-Phase 4 — Embeddings and Retrieval
+Phase 5 — Matching and Scoring
 
 ---
 
 # Current Milestone
 
-M4.1 — pgvector Setup
+M5.1 — Match Classification
 
 ---
 
@@ -209,26 +209,86 @@ async-unsafe lazy load). Fixed in both `job_persistence.py` and
 
 ---
 
+## Phase 4 — Embeddings and Retrieval (Complete)
+
+### M4.1 — pgvector Setup
+
+- `docker-compose.yml` switched from `postgres:16` to `pgvector/pgvector:pg16` (same
+  Postgres 16 base; existing volume/data carried over cleanly, verified via `\dt`
+  before/after). Migration `b8de7e54b1de_add_embedding_column_to_candidate_.py` runs
+  `CREATE EXTENSION IF NOT EXISTS vector` and adds `candidate_evidence.embedding
+  vector(384)` (`pgvector` Python package's `Vector` SQLAlchemy type).
+
+### M4.2 — Embedding Service
+
+- `app/services/embedding_service.py`: `sentence-transformers/all-MiniLM-L6-v2` (CPU,
+  explicit `device="cpu"` — see implementation note below), configurable via
+  `EMBEDDING_MODEL`/`EMBEDDING_DEVICE`; `embed_text(_async)`/`embed_texts(_async)` for
+  single/batch embedding; raises `EmbeddingError` if the model's output dimension
+  doesn't match `EMBEDDING_DIMENSION`. Models are cached per (name, device) to avoid
+  reloading. Async wrappers run the CPU-bound `encode()` call via `asyncio.to_thread`
+  so it doesn't block the event loop.
+- **Implementation note**: the installed `torch` build defaulted to attempting CUDA
+  execution and failed (`no kernel image is available for execution on the device`)
+  on this machine despite no properly configured GPU; fixed by passing an explicit
+  `device="cpu"` to `SentenceTransformer(...)` rather than relying on torch's
+  auto-detection, for portability across environments.
+
+### M4.3 — Evidence Indexing
+
+- `profile_persistence.py` batch-embeds all generated evidence texts in one call and
+  assigns each unit's `embedding` before insert, keeping `evidence_service.py` itself
+  free of any embedding/model concerns (M2.2's pure-function property is preserved).
+
+### M4.4 — Semantic Retrieval
+
+- `app/services/retrieval_service.py::retrieve_relevant_evidence`: embeds the query
+  text, ranks a candidate profile's evidence by pgvector cosine distance
+  (`Vector.cosine_distance`), returns `(evidence, distance)` pairs. `top_k` defaults to
+  configurable `RETRIEVAL_TOP_K`.
+- `GET /api/v1/candidate-profiles/{id}/retrieve?query=...&top_k=...` exposes this for
+  inspection; `404` for unknown profile, `422` for blank query.
+
+### M4.5 — Retrieval Evaluation
+
+- `backend/tests/evaluation/test_retrieval_evaluation.py`: a synthetic, hand-labeled
+  10-item evidence set with 8 labeled `(requirement, expected_evidence)` pairs,
+  measuring recall@3 (see `docs/EVALUATION.md`, corrected this phase — see below).
+  Result: **recall@3 = 1.00 (8/8)** with the current model/config. The run prints the
+  metric, example count, and model name.
+- **Documentation fix**: `docs/EVALUATION.md` was found to contain a duplicate of
+  `docs/DATA_MODEL.md`'s content instead of an evaluation strategy (a pre-existing
+  defect, not introduced this session). Rewritten with the evaluation dimensions,
+  data-handling rules, and runner conventions this and future evaluation work depend
+  on.
+
+### Phase 4 Exit Criteria — Verified
+
+A job requirement retrieves relevant candidate evidence with measurable retrieval
+quality. Confirmed via 38 automated tests (`make test`), Ruff/mypy clean, and a live
+end-to-end run (real Ollama extraction → real Postgres persistence with embeddings →
+real pgvector retrieval) — verified both via direct SQL (`vector_dims(embedding) =
+384` on every evidence row) and via the retrieve endpoint's ranked output.
+
+---
+
 # In Progress
 
-- None. Phases 0–3 are complete. Phase 4 (Embeddings and Retrieval) has not yet
-  started.
+- None. Phases 0–4 are complete. Phase 5 (Matching and Scoring) has not yet started.
 
 ---
 
 # Not Started
 
-## Phase 4 — Embeddings and Retrieval
+## Phase 5 — Matching and Scoring
 
-- M4.1 — pgvector Setup
-- M4.2 — Embedding Service
-- M4.3 — Evidence Indexing
-- M4.4 — Semantic Retrieval
-- M4.5 — Retrieval Evaluation
+- M5.1 — Match Classification
+- M5.2 — Match Explanation
+- M5.3 — Deterministic Scoring
+- M5.4 — Gap Analysis
 
 ## Later Phases
 
-- Phase 5 — Matching and Scoring
 - Phase 6 — Grounded Resume Tailoring
 - Phase 7 — Resume Versioning and Export
 - Phase 8 — Frontend Product Experience
@@ -245,10 +305,8 @@ of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
 - `backend/app/api/{analysis,generation}.py`
 - `backend/app/models/application.py` (Phase 7+)
 - `backend/app/schemas/{matching,generation}.py`
-- `backend/app/services/{matching_service,scoring_service,retrieval_service,
-  embedding_service,tailoring_service}.py`
+- `backend/app/services/{matching_service,scoring_service,tailoring_service}.py`
 - `backend/app/prompts/{evidence_matching,bullet_rewriting}.md`
-- `backend/tests/evaluation/`
 - `frontend/src/**`
 
 These remain intentionally unimplemented (empty) and are out of scope until their
@@ -268,5 +326,6 @@ None currently.
 
 # Next Action
 
-Begin Phase 4 — Embeddings and Retrieval, starting with M4.1 (pgvector Setup): enable
-the pgvector extension and add embedding storage for candidate evidence.
+Begin Phase 5 — Matching and Scoring, starting with M5.1 (Match Classification):
+classify each job requirement against retrieved candidate evidence as
+`STRONG_MATCH`/`PARTIAL_MATCH`/`NO_EVIDENCE`.

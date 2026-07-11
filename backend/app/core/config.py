@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     ollama_model: str = "llama3.1"
 
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dimension: int = 384
+    embedding_device: str = "cpu"
+    retrieval_top_k: int = 5
 
     max_upload_size_mb: int = 10
     upload_storage_dir: str = "data/uploads"
