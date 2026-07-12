@@ -247,3 +247,52 @@ under the same driver and URL scheme, avoiding the need for two separate drivers
 Local development uses a Dockerized PostgreSQL container (`docker-compose.yml`)
 mapped to host port `5433` rather than the default `5432`, to avoid colliding with
 any pre-existing local PostgreSQL installation. `DATABASE_URL` reflects this.
+
+---
+
+# ADR-012 — Export Documents Generated On Demand, Not Persisted
+
+## Status
+
+Accepted
+
+## Decision
+
+`ResumeVersion` persists a structured `generated_content` field (the fully assembled,
+job-tailored resume content). DOCX and PDF files are rendered from that field on every
+export request rather than generated once and stored as files.
+
+## Rationale
+
+`generated_content` is deterministic and already the complete source of truth for a
+version. Regenerating a document from it is cheap and always consistent with what's
+stored; persisting rendered files separately would add file lifecycle/cleanup concerns
+(orphaned files if a version is deleted, staleness if rendering logic changes) for no
+benefit, which conflicts with the project's preference for avoiding unnecessary
+complexity.
+
+## Consequences
+
+`ResumeVersion` has no file-path columns. `GET /api/v1/resume-versions/{id}/export/docx`
+and `.../export/pdf` always render fresh from `generated_content`.
+
+---
+
+# ADR-013 — reportlab for PDF Generation
+
+## Status
+
+Accepted
+
+## Decision
+
+Use `reportlab` (pure Python, no external binary dependency) to generate PDF resume
+exports, rather than an external converter (e.g. LibreOffice/pandoc-based DOCX→PDF
+conversion).
+
+## Rationale
+
+PyMuPDF (already a dependency) is used for PDF *parsing*, not generation. reportlab
+builds PDFs directly from Python, keeping resume rendering (DOCX and PDF) implemented
+independently from the same `generated_content`, with no subprocess/external-tool
+dependency to install or manage in deployment.

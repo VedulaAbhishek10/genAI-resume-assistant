@@ -15,7 +15,8 @@ async def _clean_database() -> None:
                 "TRUNCATE TABLE resumes, candidate_profiles, experiences, projects, "
                 "skills, education, certifications, candidate_evidence, "
                 "job_descriptions, job_requirements, match_analyses, "
-                "requirement_matches, resume_suggestions RESTART IDENTITY CASCADE"
+                "requirement_matches, resume_suggestions, resume_versions, "
+                "applications RESTART IDENTITY CASCADE"
             )
         )
     await engine.dispose()

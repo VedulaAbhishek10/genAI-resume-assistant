@@ -1,3 +1,4 @@
+from app.models.application import Application
 from app.models.candidate import (
     CandidateProfile,
     Certification,
@@ -10,9 +11,11 @@ from app.models.evidence import CandidateEvidence
 from app.models.job import JobDescription, JobRequirement
 from app.models.matching import MatchAnalysis, RequirementMatch
 from app.models.resume import Resume
+from app.models.resume_version import ResumeVersion
 from app.models.suggestion import ResumeSuggestion
 
 __all__ = [
+    "Application",
     "CandidateEvidence",
     "CandidateProfile",
     "Certification",
@@ -25,5 +28,6 @@ __all__ = [
     "RequirementMatch",
     "Resume",
     "ResumeSuggestion",
+    "ResumeVersion",
     "Skill",
 ]

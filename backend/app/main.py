@@ -3,9 +3,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.api.analysis import router as analysis_router
+from app.api.applications import router as applications_router
 from app.api.evidence import router as evidence_router
 from app.api.generation import router as generation_router
 from app.api.jobs import router as jobs_router
+from app.api.resume_versions import router as resume_versions_router
 from app.api.resumes import router as resumes_router
 from app.core.config import get_settings
 from app.core.exceptions import AppError
@@ -20,6 +22,8 @@ app.include_router(evidence_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(analysis_router, prefix="/api/v1")
 app.include_router(generation_router, prefix="/api/v1")
+app.include_router(resume_versions_router, prefix="/api/v1")
+app.include_router(applications_router, prefix="/api/v1")
 
 
 @app.exception_handler(AppError)

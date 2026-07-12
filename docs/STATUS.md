@@ -1,18 +1,18 @@
 # Project Status
 
-Last Updated: 2026-07-11
+Last Updated: 2026-07-12
 
 ---
 
 # Current Phase
 
-Phase 7 — Resume Versioning and Export
+Phase 7 — Resume Versioning and Export (Complete)
 
 ---
 
 # Current Milestone
 
-M7.1 — Resume Versioning
+None in progress. Phase 8 (Frontend Product Experience) has not yet started.
 
 ---
 
@@ -400,11 +400,90 @@ The user can review and approve evidence-grounded resume changes. Confirmed via:
   analysis contains no `STRONG_MATCH`/`PARTIAL_MATCH` requirements, rather than
   fabricating a suggestion for a gap.
 
+## Phase 7 — Resume Versioning and Export (Complete)
+
+### M7.1 — Resume Versioning
+
+- `ResumeVersion` SQLAlchemy model (`app/models/resume_version.py`) + Pydantic schemas
+  (`app/schemas/resume_version.py`: `GeneratedResumeContent` and its section models,
+  `ResumeVersionCreateRequest`, `ResumeVersionRead`). Fields: `resume_id` (master),
+  `job_description_id` and `match_analysis_id` (target job), `applied_suggestion_ids`,
+  `generated_content` (JSONB — the fully assembled resume, captured at creation time so
+  a version stays reproducible even if the candidate profile changes later). Migration
+  `3d4d3676498a_create_resume_versions_table.py`.
+- `app/services/resume_version_service.py::create_resume_version` — deterministic, no
+  LLM calls: loads the master resume's full candidate profile, gathers every
+  `ACCEPTED`/`EDITED` suggestion tied to the given match analysis (ADR-009 — the human
+  review decision determines what's applied, not the AI), and replaces each matching
+  bullet/skill/summary line with its final (edited-or-suggested) text. Suggestions are
+  matched back to profile content by `(source_entity_id, original_text)` rather than by
+  evidence ID alone, since one entity (e.g. one `Experience`) can have multiple
+  achievement bullets, each its own evidence row.
+- `POST /api/v1/resumes/{resume_id}/versions`, `GET .../versions`,
+  `GET /api/v1/resume-versions/{id}` (`app/api/resume_versions.py`); validates the
+  match analysis actually belongs to the resume's candidate profile
+  (`400 INVALID_REQUEST` otherwise — new `InvalidRequestError` in
+  `app/core/exceptions.py`).
+
+### M7.2 — DOCX Generation
+
+- `app/services/document_export_service.py::generate_docx` renders `generated_content`
+  (professional summary, experience, projects, skills, education, certifications) to a
+  DOCX byte stream via `python-docx` (already a dependency, previously used only for
+  parsing). Pure formatting over already human-approved content — no additional
+  grounding to enforce here.
+- `GET /api/v1/resume-versions/{id}/export/docx` returns the file with the correct
+  `Content-Disposition`/`Content-Type`.
+
+### M7.3 — PDF Generation
+
+- `app/services/document_export_service.py::generate_pdf` renders the same
+  `generated_content` to PDF via `reportlab` (new dependency; pure Python, no external
+  binary/converter — ADR-013).
+- `GET /api/v1/resume-versions/{id}/export/pdf` returns the file.
+- Per ADR-012, DOCX/PDF bytes are generated fresh from `generated_content` on every
+  export request rather than persisted as files — `generated_content` is already the
+  deterministic source of truth, so there is nothing further to keep in sync.
+
+### M7.4 — Application Association
+
+- `Application` SQLAlchemy model (`app/models/application.py`, filling in the Phase 0
+  placeholder) + schemas (`app/schemas/application.py`: `ApplicationStatus` enum —
+  `SAVED`/`PREPARING`/`APPLIED`/`INTERVIEW`/`REJECTED`/`OFFER`/`WITHDRAWN` — matching
+  `docs/DATA_MODEL.md`). Migration `8d89a24a24df_create_applications_table.py`.
+- `app/services/application_service.py`: create/list/get/update. `company`/`role`
+  default from the associated `JobDescription`'s already-extracted fields when not
+  explicitly provided. Associating a `resume_version_id` (at creation or via update) is
+  validated against the application's `job_description_id`
+  (`400 INVALID_REQUEST` on mismatch) so an application can't reference a resume version
+  generated for a different job.
+- `POST/GET /api/v1/applications`, `GET/PATCH /api/v1/applications/{id}`
+  (`app/api/applications.py`).
+
+### Phase 7 Exit Criteria — Verified
+
+The user can export and preserve a tailored job-specific resume. Confirmed via:
+
+- 65 automated tests passing (`make test`), including
+  `tests/integration/test_resume_version_api.py` (full pipeline: upload → job → match
+  analysis → suggestion → accept → create version → list → get → export DOCX → export
+  PDF, plus a mismatched-match-analysis 400 case and an unknown-version 404 case),
+  `tests/integration/test_application_api.py` (create/list/get/update, plus a
+  mismatched-resume-version 400 case built from a real second job/version rather than a
+  synthetic ID), and `tests/unit/test_document_export_service.py` (DOCX opened via
+  `python-docx` and PDF opened via `fitz` are each asserted to actually contain the
+  expected rewritten text, not just be non-empty byte strings).
+- Ruff and mypy (strict) clean (`make lint`, `make typecheck`).
+- This phase has no LLM-calling code (version assembly and document rendering are both
+  deterministic), so the real-Postgres integration tests are themselves the live
+  end-to-end verification — there is no separate "real Ollama" check to run, unlike
+  earlier phases.
+
 ---
 
 # In Progress
 
-- None. Phases 0–6 are complete. Phase 7 (Resume Versioning and Export) has not yet
+- None. Phases 0–7 are complete. Phase 8 (Frontend Product Experience) has not yet
   started.
 
 ---
@@ -413,7 +492,6 @@ The user can review and approve evidence-grounded resume changes. Confirmed via:
 
 ## Later Phases
 
-- Phase 7 — Resume Versioning and Export
 - Phase 8 — Frontend Product Experience
 - Phase 9 — Evaluation and Observability
 - Phase 10 — Production Hardening
@@ -425,7 +503,6 @@ The user can review and approve evidence-grounded resume changes. Confirmed via:
 The repository still contains empty placeholder files for later phases, created ahead
 of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
 
-- `backend/app/models/application.py` (Phase 7+)
 - `frontend/src/**`
 
 These remain intentionally unimplemented (empty) and are out of scope until their
@@ -445,6 +522,5 @@ None currently.
 
 # Next Action
 
-Begin Phase 7 — Resume Versioning and Export, starting with M7.1 (Resume Versioning):
-preserve the master version, target job, accepted changes, and generated versions with
-traceable source relationships.
+Begin Phase 8 — Frontend Product Experience, starting with M8.1 (Application Shell):
+navigation, layout, API client, and frontend configuration.

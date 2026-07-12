@@ -52,3 +52,8 @@ class NotFoundError(AppError):
 class EmbeddingError(AppError):
     status_code = 500
     error_code = "EMBEDDING_ERROR"
+
+
+class InvalidRequestError(AppError):
+    status_code = 400
+    error_code = "INVALID_REQUEST"
