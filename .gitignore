@@ -36,6 +36,7 @@ data/samples/*
 data/evaluation/*
 !data/samples/.gitkeep
 !data/evaluation/.gitkeep
+backend/data/uploads/
 
 # Logs
 *.log

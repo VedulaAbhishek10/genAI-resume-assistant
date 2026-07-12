@@ -6,13 +6,13 @@ Last Updated: 2026-07-11
 
 # Current Phase
 
-Phase 6 — Grounded Resume Tailoring
+Phase 7 — Resume Versioning and Export
 
 ---
 
 # Current Milestone
 
-M6.1 — Suggestion Schema
+M7.1 — Resume Versioning
 
 ---
 
@@ -328,23 +328,88 @@ for a "PostgreSQL experience" requirement) — a model-quality issue for Phase 9
 evaluation to track, not a pipeline defect; the deterministic scoring/gap logic
 correctly reflects whatever classification it's given either way.
 
+## Phase 6 — Grounded Resume Tailoring (Complete)
+
+### M6.1 — Suggestion Schema
+
+- `ResumeSuggestion` SQLAlchemy model (`app/models/suggestion.py`) + Pydantic read/update
+  schemas (`app/schemas/generation.py`: `ResumeSuggestionRead`, `ResumeSuggestionUpdateRequest`,
+  `ReviewStatus` enum). Fields: `original_text`, `suggested_text`, `reason`, `evidence_ids`,
+  `confidence`, `is_grounded`, `review_status`, `edited_text`, `created_at`. Foreign key to
+  `RequirementMatch` (Phase 5). Migration `9f7a5a776b1f_create_resume_suggestions_table.py`.
+
+### M6.2 — Bullet Rewriting
+
+- `app/services/tailoring_service.py::generate_bullet_suggestion` calls the LLM with a
+  versioned prompt (`app/prompts/bullet_rewriting.md`, `bullet_rewriting_v1`) that supplies
+  the target requirement text and one evidence unit's original text, and explicitly
+  prohibits adding any employer/title/technology/skill/responsibility/metric not already
+  present in the original (per the Central Product Principle). Moderate temperature (0.2)
+  per `docs/AI_SYSTEM.md`'s guidance for controlled rewriting vs. low-temperature
+  extraction/classification.
+- `app/services/suggestion_service.py::generate_suggestions_for_analysis` generates one
+  suggestion per evidence unit backing every `STRONG_MATCH`/`PARTIAL_MATCH` requirement in
+  a match analysis. `NO_EVIDENCE` requirements intentionally produce no suggestion — there
+  is nothing groundable to rewrite (ADR-008); those remain gaps for the human to address
+  with real experience, not for the AI to paper over.
+
+### M6.3 — Grounding Validation
+
+- `app/services/tailoring_service.py::validate_grounding` — deterministic, narrow check:
+  a suggestion is flagged ungrounded if it introduces any number/percentage/count not
+  present in the original evidence text. This targets the most common, highest-risk
+  hallucination pattern (invented metrics) without requiring a second LLM call; broader
+  groundedness evaluation is deferred to Phase 9 (M9.2–M9.4) per `docs/EVALUATION.md`.
+  Result stored per-suggestion as `is_grounded`, surfaced for human review rather than
+  silently discarded (ADR-009).
+- Unit tests (`tests/unit/test_tailoring_service.py`) cover: no new numbers introduced,
+  a new metric introduced, an original number reused verbatim, and an original number
+  changed.
+
+### M6.4 — Human Review Workflow
+
+- `PATCH /api/v1/suggestions/{suggestion_id}` (`app/services/suggestion_service.py::
+  update_suggestion_review`) accepts `ACCEPTED`/`REJECTED`/`EDITED`; `EDITED` requires
+  non-empty `edited_text` (`ResumeSuggestionUpdateRequest` validator), stored on the
+  suggestion row itself. Review actions never touch `CandidateEvidence` or the
+  suggestion's own `original_text` (ADR-009) — edits are recorded for use when a tailored
+  resume version is assembled later (Phase 7).
+- `POST /api/v1/match-analyses/{match_analysis_id}/suggestions` (generate) and
+  `GET /api/v1/match-analyses/{match_analysis_id}/suggestions` (list) round out the API
+  (`app/api/generation.py`).
+
+### Phase 6 Exit Criteria — Verified
+
+The user can review and approve evidence-grounded resume changes. Confirmed via:
+
+- 57 automated tests passing (`make test`), including
+  `tests/integration/test_suggestion_api.py` (generate → list → accept → edit, plus 404
+  and validation-error cases) and `tests/unit/test_tailoring_service.py`.
+- Ruff and mypy (strict) clean (`make lint`, `make typecheck`).
+- A live end-to-end check of `generate_bullet_suggestion` against the real local Ollama
+  model (not mocks): given evidence with no supporting detail beyond the requirement's
+  phrasing, the model correctly returned the original text unchanged rather than
+  embellishing (per the prompt's "Failure Behavior" rule); given evidence that did
+  support better terminology alignment, it produced a grounded rewrite
+  ("Built APIs using Python and FastAPI for internal services." →
+  "Built RESTful APIs using Python and FastAPI for internal services."). `validate_grounding`
+  correctly flagged a fabricated-metric variant as ungrounded in the same session.
+- A live run of the full pipeline (`POST /api/v1/resumes` → `POST /api/v1/jobs` →
+  `POST /api/v1/match-analyses` → `POST .../suggestions`) against real Ollama + real
+  Postgres confirmed the API correctly returns an empty suggestion list when the match
+  analysis contains no `STRONG_MATCH`/`PARTIAL_MATCH` requirements, rather than
+  fabricating a suggestion for a gap.
+
 ---
 
 # In Progress
 
-- None. Phases 0–5 are complete. Phase 6 (Grounded Resume Tailoring) has not yet
+- None. Phases 0–6 are complete. Phase 7 (Resume Versioning and Export) has not yet
   started.
 
 ---
 
 # Not Started
-
-## Phase 6 — Grounded Resume Tailoring
-
-- M6.1 — Suggestion Schema
-- M6.2 — Bullet Rewriting
-- M6.3 — Grounding Validation
-- M6.4 — Human Review Workflow
 
 ## Later Phases
 
@@ -360,11 +425,7 @@ correctly reflects whatever classification it's given either way.
 The repository still contains empty placeholder files for later phases, created ahead
 of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
 
-- `backend/app/api/generation.py`
 - `backend/app/models/application.py` (Phase 7+)
-- `backend/app/schemas/generation.py`
-- `backend/app/services/tailoring_service.py`
-- `backend/app/prompts/bullet_rewriting.md`
 - `frontend/src/**`
 
 These remain intentionally unimplemented (empty) and are out of scope until their
@@ -384,6 +445,6 @@ None currently.
 
 # Next Action
 
-Begin Phase 6 — Grounded Resume Tailoring, starting with M6.1 (Suggestion Schema):
-represent original text, suggested text, reason, evidence, confidence, and review
-status for AI-generated resume suggestions.
+Begin Phase 7 — Resume Versioning and Export, starting with M7.1 (Resume Versioning):
+preserve the master version, target job, accepted changes, and generated versions with
+traceable source relationships.

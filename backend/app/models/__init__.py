@@ -10,6 +10,7 @@ from app.models.evidence import CandidateEvidence
 from app.models.job import JobDescription, JobRequirement
 from app.models.matching import MatchAnalysis, RequirementMatch
 from app.models.resume import Resume
+from app.models.suggestion import ResumeSuggestion
 
 __all__ = [
     "CandidateEvidence",
@@ -23,5 +24,6 @@ __all__ = [
     "Project",
     "RequirementMatch",
     "Resume",
+    "ResumeSuggestion",
     "Skill",
 ]
