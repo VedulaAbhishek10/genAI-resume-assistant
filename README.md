@@ -84,6 +84,25 @@ Run everything (lint, typecheck, test) with:
 make check
 ```
 
+## Running the frontend
+
+Requires Node.js 22+.
+
+```bash
+make frontend-install
+cd frontend && cp .env.example .env
+make frontend-dev
+```
+
+Starts the Vite dev server at `http://localhost:5173`. It expects the backend
+(`make run`) reachable at `VITE_API_BASE_URL` (defaults to `http://127.0.0.1:8000`);
+the backend's `CORS_ALLOWED_ORIGINS` already permits `http://localhost:5173` by default.
+
+```bash
+make frontend-lint
+make frontend-build
+```
+
 ## Database Migrations
 
 Schema changes are managed with Alembic from `backend/`:

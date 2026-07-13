@@ -1,18 +1,18 @@
 # Project Status
 
-Last Updated: 2026-07-12
+Last Updated: 2026-07-13
 
 ---
 
 # Current Phase
 
-Phase 7 — Resume Versioning and Export (Complete)
+Phase 8 — Frontend Product Experience (In Progress)
 
 ---
 
 # Current Milestone
 
-None in progress. Phase 8 (Frontend Product Experience) has not yet started.
+M8.1 (Application Shell) complete. M8.2 (Resume Workflow) not yet started.
 
 ---
 
@@ -479,34 +479,72 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
   end-to-end verification — there is no separate "real Ollama" check to run, unlike
   earlier phases.
 
+## Phase 8 — Frontend Product Experience (In Progress)
+
+### M8.1 — Application Shell
+
+- Scaffolded with Vite (`react-ts` template), React 19, TypeScript, and Tailwind CSS v4
+  (`@tailwindcss/vite`) in `frontend/`. shadcn/ui initialized (`components.json`, `cn`
+  helper in `src/lib/utils.ts`, base `Button` component); `@/*` path alias configured in
+  `tsconfig.app.json`/`vite.config.ts`.
+- Navigation and layout: `src/components/layout/AppShell.tsx` (persistent nav + routed
+  `Outlet`) and `NavBar.tsx`, routed via `react-router-dom` (`src/App.tsx`) across `Home`,
+  `Resume`, `Jobs`, `Analysis`, `Editor` — matching `docs/ARCHITECTURE.md`'s frontend
+  section layout. Route components live in `src/pages/`; the four non-Home pages are
+  intentional `PlaceholderPage` stubs pending M8.2–M8.4.
+- API client: `src/api/client.ts` — a shared `axios` instance (`VITE_API_BASE_URL`, see
+  `frontend/.env.example`) with a response interceptor that unwraps the backend's
+  `{"error": {"code", "message"}}` envelope (`docs/API.md`) into a plain `ApiError`
+  (`src/types/api.ts`) so callers don't reach into the Axios response shape.
+- `@tanstack/react-query`'s `QueryClientProvider` wraps the app in `src/main.tsx`, ready
+  for data-fetching hooks in M8.2+. `react-hook-form`, `zod`, and `@hookform/resolvers`
+  installed for the same reason (not yet used — no forms exist until M8.2).
+- Backend: added `CORSMiddleware` (`backend/app/main.py`) and a configurable
+  `cors_allowed_origins` setting (`backend/app/core/config.py`, default
+  `http://localhost:5173`) so the browser-based frontend can call the API in local
+  development; documented in the root `.env.example`.
+- `Makefile` gained `frontend-install`/`frontend-dev`/`frontend-build`/`frontend-lint`
+  targets; `README.md` documents running the frontend against the backend.
+
+### Phase 8 Progress Notes
+
+- Verified live (not just build/lint): started both dev servers and used Playwright
+  (Chromium) to load `http://localhost:5173`, click through all four nav links plus a
+  direct URL navigation to `/resume`, confirming the correct page renders each time with
+  zero browser console errors; a script running in the page's own browser context
+  successfully called `GET http://127.0.0.1:8000/health` and got `200 {"status": "ok"}`,
+  confirming the CORS configuration actually works end-to-end (not just headers present).
+- `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) both pass with no
+  warnings in project code (one pre-existing warning inside the shadcn-generated
+  `button.tsx` is unrelated to this milestone). Backend `make lint`, `make typecheck`
+  (mypy strict), and `make test` (65 tests) remain clean after the CORS change.
+
 ---
 
 # In Progress
 
-- None. Phases 0–7 are complete. Phase 8 (Frontend Product Experience) has not yet
+- None actively in progress. M8.1 is complete; M8.2 (Resume Workflow) has not yet
   started.
 
 ---
 
 # Not Started
 
+## Remaining Phase 8 Milestones
+
+- M8.2 — Resume Workflow
+- M8.3 — Job Analysis
+- M8.4 — Tailoring Interface
+- M8.5 — Application Dashboard
+
 ## Later Phases
 
-- Phase 8 — Frontend Product Experience
 - Phase 9 — Evaluation and Observability
 - Phase 10 — Production Hardening
 
 ---
 
 # Notes on Existing Scaffolding
-
-The repository still contains empty placeholder files for later phases, created ahead
-of implementation to reflect the intended structure from `docs/ARCHITECTURE.md`:
-
-- `frontend/src/**`
-
-These remain intentionally unimplemented (empty) and are out of scope until their
-corresponding roadmap milestone begins.
 
 `backend/Dockerfile` remains an empty placeholder, deferred to Phase 10 (M10.3
 containerization) — the application itself is not yet containerized; only its
@@ -522,5 +560,5 @@ None currently.
 
 # Next Action
 
-Begin Phase 8 — Frontend Product Experience, starting with M8.1 (Application Shell):
-navigation, layout, API client, and frontend configuration.
+Continue Phase 8 — Frontend Product Experience with M8.2 (Resume Workflow): resume
+upload, candidate profile review, evidence inspection.

@@ -2,7 +2,8 @@ VENV := .venv
 PYTHON := $(VENV)/bin/python
 UVICORN := $(VENV)/bin/uvicorn
 
-.PHONY: venv install run test lint format typecheck check db-up db-down migrate
+.PHONY: venv install run test lint format typecheck check db-up db-down migrate \
+	frontend-install frontend-dev frontend-build frontend-lint
 
 venv:
 	python3.14 -m venv $(VENV)
@@ -35,3 +36,15 @@ typecheck:
 	cd backend && ../$(PYTHON) -m mypy app
 
 check: lint typecheck test
+
+frontend-install:
+	cd frontend && npm install
+
+frontend-dev:
+	cd frontend && npm run dev
+
+frontend-build:
+	cd frontend && npm run build
+
+frontend-lint:
+	cd frontend && npm run lint

@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = 10
     upload_storage_dir: str = "data/uploads"
 
+    # Origins allowed to call the API from a browser (the frontend dev server by
+    # default). Override with a JSON array via CORS_ALLOWED_ORIGINS if needed.
+    cors_allowed_origins: list[str] = ["http://localhost:5173"]
+
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/resume_assistant"
 
     # Deterministic match-scoring weights (see docs/ROADMAP.md M5.3); must sum to 1.0
