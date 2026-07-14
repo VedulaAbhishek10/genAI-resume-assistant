@@ -1,6 +1,6 @@
 # Project Status
 
-Last Updated: 2026-07-13
+Last Updated: 2026-07-14
 
 ---
 
@@ -12,7 +12,7 @@ Phase 8 — Frontend Product Experience (In Progress)
 
 # Current Milestone
 
-M8.1 (Application Shell) complete. M8.2 (Resume Workflow) not yet started.
+M8.2 (Resume Workflow) complete. M8.3 (Job Analysis) not yet started.
 
 ---
 
@@ -506,7 +506,7 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
 - `Makefile` gained `frontend-install`/`frontend-dev`/`frontend-build`/`frontend-lint`
   targets; `README.md` documents running the frontend against the backend.
 
-### Phase 8 Progress Notes
+### Phase 8 Progress Notes (M8.1)
 
 - Verified live (not just build/lint): started both dev servers and used Playwright
   (Chromium) to load `http://localhost:5173`, click through all four nav links plus a
@@ -519,12 +519,55 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
   `button.tsx` is unrelated to this milestone). Backend `make lint`, `make typecheck`
   (mypy strict), and `make test` (65 tests) remain clean after the CORS change.
 
+### M8.2 — Resume Workflow
+
+- Domain types added to `src/types/api.ts` (`CandidateProfileExtraction` and its nested
+  experience/project/skill/education/certification shapes, `ResumeUploadResponse`,
+  `CandidateEvidenceRead`, `EvidenceType`, `SourceEntityType`), matching the backend's
+  `POST /api/v1/resumes` and `GET /api/v1/candidate-profiles/{id}/evidence` contracts
+  exactly (`docs/API.md`).
+- `src/api/resumes.ts` (`uploadResume`) and `src/api/evidence.ts`
+  (`getCandidateEvidence`) — thin wrappers over the shared `apiClient`
+  (`src/api/client.ts`), following M8.1's established pattern.
+- Added shadcn/ui `Card`, `Badge`, `Tabs`, and `Alert` components (`src/components/ui/`)
+  via `npx shadcn add`, matching the existing `base-nova` style already used by `Button`.
+- `src/components/resume/`: `ResumeUploadCard` (file input + `useMutation` upload, with
+  loading/success/error states), `CandidateProfileSummary` (renders professional
+  summary, experience, projects, skills, education, certifications — each section
+  showing an explicit "none extracted" message rather than silently rendering empty,
+  so missing data reads as missing rather than as a bug), and `EvidenceList` (a
+  `useQuery` fetch of the candidate's evidence, grouped by `evidence_type` into cards).
+- `src/pages/ResumePage.tsx` replaces the M8.1 `PlaceholderPage` stub: an upload card
+  followed by a `Tabs` view ("Candidate profile" / "Evidence") once a resume has been
+  uploaded. Since the backend does not yet expose a GET-by-id endpoint for resumes or
+  candidate profiles (`docs/API.md`'s "Initial Implemented Endpoints" — only `POST
+  /resumes` and the evidence/retrieve GETs exist), the full `candidate_profile` payload
+  from the upload response is held in component state to drive the profile-review tab;
+  only `candidate_profile_id` is used to separately fetch evidence. There is
+  intentionally no persistence across a page reload yet — re-fetching a previously
+  uploaded profile is out of scope until a GET-by-id endpoint exists.
+
+### Phase 8 Progress Notes (M8.2)
+
+- Verified live end-to-end (not just build/lint): started the real backend (Ollama +
+  Postgres, same as prior phases) and the Vite dev server, then drove the actual browser
+  UI with Playwright (Chromium, via `frontend/node_modules/.bin`) — uploaded
+  `backend/tests/fixtures/sample_resume.pdf` through the rendered file input and Upload
+  button, waited for the real LLM extraction round trip, and confirmed: the "Resume
+  uploaded" success alert appeared; the Candidate Profile tab rendered the correct
+  professional summary, experience, skills, and education from the actual model output;
+  switching to the Evidence tab triggered a real `GET .../evidence` call and rendered 3
+  grouped cards (`Skill (3)`, `Education (1)`) with real evidence text and source-entity
+  badges. Zero browser console errors throughout.
+- `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) both pass with no
+  new warnings (the same pre-existing shadcn `button.tsx`/`badge.tsx`/`tabs.tsx`
+  fast-refresh warnings as before, unrelated to this milestone).
+
 ---
 
 # In Progress
 
-- None actively in progress. M8.1 is complete; M8.2 (Resume Workflow) has not yet
-  started.
+- None actively in progress. M8.2 is complete; M8.3 (Job Analysis) has not yet started.
 
 ---
 
@@ -532,7 +575,6 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
 
 ## Remaining Phase 8 Milestones
 
-- M8.2 — Resume Workflow
 - M8.3 — Job Analysis
 - M8.4 — Tailoring Interface
 - M8.5 — Application Dashboard
@@ -560,5 +602,5 @@ None currently.
 
 # Next Action
 
-Continue Phase 8 — Frontend Product Experience with M8.2 (Resume Workflow): resume
-upload, candidate profile review, evidence inspection.
+Continue Phase 8 — Frontend Product Experience with M8.3 (Job Analysis): job
+description input, requirements, match score, gaps.
