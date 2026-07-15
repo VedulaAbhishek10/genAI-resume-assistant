@@ -40,3 +40,4 @@ backend/data/uploads/
 
 # Logs
 *.log
+.aider*
