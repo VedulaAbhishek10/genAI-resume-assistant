@@ -1,6 +1,6 @@
 # Project Status
 
-Last Updated: 2026-07-14
+Last Updated: 2026-07-15
 
 ---
 
@@ -12,7 +12,7 @@ Phase 8 — Frontend Product Experience (In Progress)
 
 # Current Milestone
 
-M8.2 (Resume Workflow) complete. M8.3 (Job Analysis) not yet started.
+M8.3 (Job Analysis) complete. M8.4 (Tailoring Interface) not yet started.
 
 ---
 
@@ -93,7 +93,7 @@ IN PROGRESS
 ### M1.4 — Candidate Profile Persistence
 
 - PostgreSQL via `docker-compose.yml` (`postgres:16`, host port `5433` to avoid
-  colliding with any existing local PostgreSQL instance — see ADR-011).
+  colliding with any existing local PostgreSQL installation — see ADR-011).
 - SQLAlchemy 2.0 async models (`app/models/candidate.py`, `app/models/resume.py`):
   `CandidateProfile`, `Experience`, `Project`, `Skill`, `Education`, `Certification`,
   `Resume`, using the psycopg3 dialect for both the async application engine
@@ -563,11 +563,44 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
   new warnings (the same pre-existing shadcn `button.tsx`/`badge.tsx`/`tabs.tsx`
   fast-refresh warnings as before, unrelated to this milestone).
 
+### M8.3 — Job Analysis
+
+- `src/api/jobs.ts` (`submitJobDescription`) and `src/api/analysis.ts` (`runMatchAnalysis`)
+  — thin wrappers over the shared `apiClient` for `POST /api/v1/jobs` and
+  `POST /api/v1/match-analyses`.
+- Domain types added to `src/types/api.ts` (`JobDescriptionResponse`,
+  `JobRequirementRead`, `MatchAnalysisResponse`, `RequirementMatchRead`, `GapItem`, etc.),
+  matching the backend's `POST /api/v1/jobs` and `POST /api/v1/match-analyses` contracts
+  exactly (`docs/API.md`).
+- `src/pages/JobsPage.tsx` replaces the M8.1 `PlaceholderPage` stub: a `react-hook-form`
+  text area for job description submission, loading/error states, and a structured
+  display of the extracted job (role title, company, seniority, requirements grouped by
+  importance and category).
+- `src/pages/AnalysisPage.tsx` replaces the M8.1 `PlaceholderPage` stub: a
+  `react-hook-form` with inputs for `candidate_profile_id` and `job_description_id`,
+  loading/error states, and a structured display of the match analysis (overall score,
+  component scores, requirement matches grouped by classification with evidence/explanation,
+  and gaps).
+
+### Phase 8 Progress Notes (M8.3)
+
+- Verified live end-to-end (not just build/lint): started the real backend (Ollama +
+  Postgres, same as prior phases) and the Vite dev server, then drove the actual browser
+  UI with Playwright (Chromium) — submitted a sample job description through the rendered
+  form, waited for the real LLM extraction round trip, and confirmed: the extracted role
+  title, company, and seniority appeared; the requirements were grouped correctly by
+  importance and category. Then pasted the resulting job ID and a candidate profile ID
+  into the Analysis page, ran the analysis, and confirmed the overall score, component
+  scores, requirement matches (with explanations and evidence), and gaps all rendered
+  correctly. Zero browser console errors throughout.
+- `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) both pass with no
+  new warnings.
+
 ---
 
 # In Progress
 
-- None actively in progress. M8.2 is complete; M8.3 (Job Analysis) has not yet started.
+- None actively in progress. M8.3 is complete; M8.4 (Tailoring Interface) has not yet started.
 
 ---
 
@@ -575,7 +608,6 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
 
 ## Remaining Phase 8 Milestones
 
-- M8.3 — Job Analysis
 - M8.4 — Tailoring Interface
 - M8.5 — Application Dashboard
 
@@ -602,5 +634,5 @@ None currently.
 
 # Next Action
 
-Continue Phase 8 — Frontend Product Experience with M8.3 (Job Analysis): job
-description input, requirements, match score, gaps.
+Continue Phase 8 — Frontend Product Experience with M8.4 (Tailoring Interface): side-by-side
+comparison, accept, reject, edit, evidence display.

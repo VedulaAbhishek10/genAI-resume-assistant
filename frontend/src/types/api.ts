@@ -96,3 +96,70 @@ export interface CandidateEvidenceRead {
   evidence_metadata: Record<string, string | null>;
   created_at: string;
 }
+
+export type JobRequirementCategory =
+  | "skill"
+  | "experience"
+  | "responsibility"
+  | "education"
+  | "certification"
+  | "domain_knowledge";
+
+export type JobRequirementImportance =
+  | "required"
+  | "preferred"
+  | "optional";
+
+export interface JobRequirementRead {
+  id: string;
+  text: string;
+  category: JobRequirementCategory;
+  importance: JobRequirementImportance;
+}
+
+/** Response body of `POST /api/v1/jobs`. */
+export interface JobDescriptionResponse {
+  id: string;
+  source_text: string;
+  role_title: string | null;
+  company: string | null;
+  seniority: string | null;
+  requirements: JobRequirementRead[];
+  created_at: string;
+}
+
+export type MatchClassification =
+  | "STRONG_MATCH"
+  | "PARTIAL_MATCH"
+  | "NO_EVIDENCE";
+
+export interface RequirementMatchRead {
+  id: string;
+  job_requirement_id: string;
+  requirement_text: string;
+  category: JobRequirementCategory;
+  importance: JobRequirementImportance;
+  classification: MatchClassification;
+  explanation: string;
+  confidence: number;
+  evidence: CandidateEvidenceRead[];
+}
+
+export interface GapItem {
+  requirement_text: string;
+  category: JobRequirementCategory;
+  importance: JobRequirementImportance;
+  classification: MatchClassification;
+}
+
+/** Response body of `POST /api/v1/match-analyses`. */
+export interface MatchAnalysisResponse {
+  id: string;
+  candidate_profile_id: string;
+  job_description_id: string;
+  overall_score: number;
+  component_scores: Record<string, number>;
+  requirement_matches: RequirementMatchRead[];
+  gaps: GapItem[];
+  created_at: string;
+}
