@@ -163,3 +163,20 @@ export interface MatchAnalysisResponse {
   gaps: GapItem[];
   created_at: string;
 }
+
+export type ReviewStatus = "pending" | "accepted" | "rejected" | "edited";
+
+export interface ResumeSuggestionRead {
+  id: string;
+  match_analysis_id: string;
+  requirement_text: string;
+  original_text: string;
+  suggested_text: string;
+  review_status: ReviewStatus;
+  edited_text: string | null;
+}
+
+export interface ResumeSuggestionUpdateRequest {
+  review_status: ReviewStatus;
+  edited_text?: string | null;
+}
