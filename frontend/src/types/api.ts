@@ -172,8 +172,13 @@ export interface ResumeSuggestionRead {
   requirement_text: string;
   original_text: string;
   suggested_text: string;
+  reason: string | null;
+  evidence_ids: string[];
+  confidence: number | null;
+  is_grounded: boolean;
   review_status: ReviewStatus;
   edited_text: string | null;
+  created_at: string;
 }
 
 export interface ResumeSuggestionUpdateRequest {
