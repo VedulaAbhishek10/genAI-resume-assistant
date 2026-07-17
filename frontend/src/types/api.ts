@@ -185,3 +185,35 @@ export interface ResumeSuggestionUpdateRequest {
   review_status: ReviewStatus;
   edited_text?: string | null;
 }
+
+export type ApplicationStatus =
+  | "saved"
+  | "preparing"
+  | "applied"
+  | "interview"
+  | "rejected"
+  | "offer"
+  | "withdrawn";
+
+export interface ApplicationRead {
+  id: string;
+  candidate_profile_id: string;
+  job_description_id: string;
+  resume_version_id: string | null;
+  company: string;
+  role: string;
+  status: ApplicationStatus;
+  applied_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResumeVersionRead {
+  id: string;
+  resume_id: string;
+  job_description_id: string;
+  match_analysis_id: string;
+  applied_suggestion_ids: string[];
+  generated_content: Record<string, unknown>;
+  created_at: string;
+}

@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/jobs", label: "Jobs" },
   { to: "/analysis", label: "Analysis" },
   { to: "/editor", label: "Editor" },
+  { to: "/dashboard", label: "Dashboard" },
 ] as const;
 
 export function NavBar() {

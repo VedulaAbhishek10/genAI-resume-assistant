@@ -1,18 +1,18 @@
 # Project Status
 
-Last Updated: 2026-07-15
+Last Updated: 2026-07-16
 
 ---
 
 # Current Phase
 
-Phase 8 — Frontend Product Experience (In Progress)
+Phase 9 — Evaluation and Observability (Not Started)
 
 ---
 
 # Current Milestone
 
-M8.3 (Job Analysis) complete. M8.4 (Tailoring Interface) not yet started.
+Phase 8 Complete. Phase 9 not yet started.
 
 ---
 
@@ -479,7 +479,7 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
   end-to-end verification — there is no separate "real Ollama" check to run, unlike
   earlier phases.
 
-## Phase 8 — Frontend Product Experience (In Progress)
+## Phase 8 — Frontend Product Experience (Complete)
 
 ### M8.1 — Application Shell
 
@@ -596,20 +596,68 @@ The user can export and preserve a tailored job-specific resume. Confirmed via:
 - `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) both pass with no
   new warnings.
 
+### M8.4 — Tailoring Interface
+
+- `src/api/suggestions.ts` (`generateSuggestions`, `updateSuggestionReview`) and
+  `src/api/resumeVersions.ts` (`createResumeVersion`) — thin wrappers over the shared
+  `apiClient` for `POST /api/v1/match-analyses/{id}/suggestions`,
+  `PATCH /api/v1/suggestions/{id}`, and `POST /api/v1/resumes/{id}/versions`.
+- Domain types added to `src/types/api.ts` (`ResumeSuggestionRead`,
+  `ResumeSuggestionUpdateRequest`, `ReviewStatus`, `ResumeVersionRead`), matching the
+  backend's suggestion and resume version contracts exactly (`docs/API.md`).
+- `src/pages/EditorPage.tsx` replaces the M8.1 `PlaceholderPage` stub: a
+  `react-hook-form` with inputs for `match_analysis_id`, `resume_id`, and
+  `candidate_profile_id`, loading/error states, and a structured display of the
+  tailoring workflow (generate suggestions → review/accept/reject/edit → create version).
+- `src/components/editor/`: `SuggestionCard` (displays original text, suggested text,
+  reason, evidence IDs, confidence, grounding status, and accept/reject/edit buttons),
+  `ResumeVersionSummary` (displays the generated resume version content and export links).
+
+### Phase 8 Progress Notes (M8.4)
+
+- Verified live end-to-end (not just build/lint): started the real backend (Ollama +
+  Postgres, same as prior phases) and the Vite dev server, then drove the actual browser
+  UI with Playwright (Chromium) — pasted the resulting match analysis ID, resume ID, and
+  candidate profile ID into the Editor page, generated suggestions, accepted/rejected/edited
+  them, and created a resume version. Confirmed the generated resume version content and
+  export links rendered correctly. Zero browser console errors throughout.
+- `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) both pass with no
+  new warnings.
+
+### M8.5 — Application Dashboard
+
+- `src/api/applications.ts` (`getApplications`) — thin wrapper over the shared `apiClient`
+  for `GET /api/v1/applications`.
+- Domain types added to `src/types/api.ts` (`ApplicationRead`, `ApplicationStatus`),
+  matching the backend's `GET /api/v1/applications` contract exactly (`docs/API.md`).
+- `src/pages/DashboardPage.tsx` replaces the M8.1 `PlaceholderPage` stub: a polished
+  dashboard displaying previous applications in a responsive card grid. Each card shows
+  the role, company, status badge, application date, and resume version link. Includes
+  loading, error, and empty states to guide the user toward creating their first
+  application.
+- `src/App.tsx` and `src/components/layout/NavBar.tsx` updated to include the `/dashboard`
+  route and navigation link.
+
+### Phase 8 Progress Notes (M8.5)
+
+- Verified live end-to-end (not just build/lint): started the real backend (Ollama +
+  Postgres, same as prior phases) and the Vite dev server, then drove the actual browser
+  UI with Playwright (Chromium) — navigated to the Dashboard page, confirmed the loading
+  state appeared, then the applications list rendered correctly with status badges and
+  dates. Zero browser console errors throughout.
+- `npm run build` (`tsc -b && vite build`) and `npm run lint` (`oxlint`) both pass with no
+  new warnings.
+
 ---
 
 # In Progress
 
-- None actively in progress. M8.3 is complete; M8.4 (Tailoring Interface) has not yet started.
+- None actively in progress. Phase 8 is complete; Phase 9 (Evaluation and Observability)
+  has not yet started.
 
 ---
 
 # Not Started
-
-## Remaining Phase 8 Milestones
-
-- M8.4 — Tailoring Interface
-- M8.5 — Application Dashboard
 
 ## Later Phases
 
@@ -634,5 +682,4 @@ None currently.
 
 # Next Action
 
-Continue Phase 8 — Frontend Product Experience with M8.4 (Tailoring Interface): side-by-side
-comparison, accept, reject, edit, evidence display.
+Begin Phase 9 — Evaluation and Observability with M9.1 (LLM Run Logging).
