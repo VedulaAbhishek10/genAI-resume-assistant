@@ -135,4 +135,75 @@ export function EditorPage() {
                   <textarea
                     className="w-full rounded-md border border-input bg-background p-2 text-foreground"
                     value={editText}
-                    onChange={(e
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                ) : (
+                  <p className="text-muted-foreground">
+                    {suggestion.suggested_text}
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            {editingId === suggestion.id ? (
+              <>
+                <Button
+                  onClick={() =>
+                    updateMutation.mutate({
+                      id: suggestion.id,
+                      status: "edited",
+                      text: editText,
+                    })
+                  }
+                  disabled={updateMutation.isPending}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setEditingId(null)}
+                  disabled={updateMutation.isPending}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => startEditing(suggestion)}
+                >
+                  Edit
+                </Button>
+                <Button
+                  onClick={() =>
+                    updateMutation.mutate({
+                      id: suggestion.id,
+                      status: "accepted",
+                    })
+                  }
+                  disabled={updateMutation.isPending}
+                >
+                  Accept
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    updateMutation.mutate({
+                      id: suggestion.id,
+                      status: "rejected",
+                    })
+                  }
+                  disabled={updateMutation.isPending}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
+}
