@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +19,8 @@ from app.core.logging import configure_logging
 settings = get_settings()
 configure_logging(settings)
 
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title=settings.app_name)
 app.add_middleware(
     CORSMiddleware,
@@ -35,6 +39,7 @@ app.include_router(applications_router, prefix="/api/v1")
 
 @app.exception_handler(AppError)
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    logger.error("Application error: %s", exc.message, exc_info=exc)
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": {"code": exc.error_code, "message": exc.message}},
