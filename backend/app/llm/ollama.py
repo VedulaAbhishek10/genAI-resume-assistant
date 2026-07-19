@@ -14,7 +14,7 @@ class OllamaClient(LLMClient):
         self,
         base_url: str,
         model: str,
-        timeout_seconds: float = 60.0,
+        timeout_seconds: float = 300.0,
         max_structured_attempts: int = 2,
     ) -> None:
         self._base_url = base_url.rstrip("/")
