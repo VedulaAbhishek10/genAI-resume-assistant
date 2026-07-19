@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "ollama"
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1"
+    ollama_model: str = "llama3.2:3b"
 
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_dimension: int = 384
